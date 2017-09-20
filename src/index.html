@@ -1,0 +1,118 @@
+<html>
+	<head>
+		<title>RDE Coding Challenge Graph</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="Chart.bundle.js"></script>
+		<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	</head>
+	
+	<body>
+		<div style="margin:auto; max-width:1000px; max-height:600px">
+			<canvas id="myChart"></canvas>
+		</div>
+		
+		<script>
+		
+		var chartCanvas = document.getElementById("myChart").getContext("2d");
+		var  daysInJuly = [];
+		
+		// add the first 29 days in July to array "daysInJuly," which will serve as the graph's x-axis
+		for (i = 1; i < 30; i++) {
+		    daysInJuly.push("7/"+i);
+		}
+		
+		// initialize options for the graph
+		var options = {
+			scales: {
+				yAxes: [{
+					ticks: {
+						beginAtZero:true
+					}
+				}]
+			},
+			title: {
+				display: true,
+				fontSize: 20,
+				text: "Website Statistics for July, 2016"
+			},
+			legend: {
+				labels: {
+					boxWidth: 30
+				}
+			},
+			tooltips: {
+				enabled: true,
+				titleFontSize: 14,
+				callbacks: {
+					// display the date and average page load speed when the mouse is hovered over a data point
+					label: function(tooltipItem, data) {                
+						return  data.datasets[0].data[tooltipItem.index] + ' ms';
+					}
+				}
+			}
+		}
+		
+		// array of days contains an array of page load speeds per day in July
+		// days[0] represents July 1st, days[28] represents July 29th
+		var days = [];
+		for (var i = 0; i < 29; i++) {
+			days.push(new Array(0));
+		}
+		
+		$.ajax({
+			type: "GET",
+			url: "getData.php",
+			dataType: "json"
+		}).done(function( data ) {
+			$.each(data, function(index, element) {
+				// add an individual page load speed to the array of load speeds for the appropriate day
+				var pos = element.TimeLoaded.lastIndexOf("-") + 1;
+				var day = parseInt(element.TimeLoaded.slice(pos, pos+2)) - 1;  // subtract 1 to convert the day into the range of 0-28 instead of 1-29
+				days[day].push(parseInt(element.LoadTime));
+			});
+			
+			// create integer array of AVERAGE page load speeds for each day
+			// avgSpeeds[0] refers to the average load speed for July 1st
+			var avgSpeeds = new Array(29);
+			
+			for (var i = 0; i < 29; i++){
+				var sum = 0;
+				for (var j = 0; j < days[i].length; j++){
+					sum = sum + days[i][j];
+				}
+				
+				// allow for interpolated values on days where no load speeds were recorded (sum === 0)
+				if (sum === 0){
+					avgSpeeds[i] = null;
+				} else {
+					avgSpeeds[i] = sum / days[i].length;
+				}
+			}
+			
+			// create the graph of average page load speeds in July
+			var myLineChart = new Chart(chartCanvas, {
+				type: 'line',
+				data: {
+					labels: daysInJuly,
+					datasets: [
+						{
+							label: "Average Page Load Speed (milliseconds)",
+							borderWidth: 3,
+							backgroundColor: "rgba(75,192,192,0.4)",
+							borderColor: "rgba(75,192,192,1)",
+							pointHoverRadius: 6,
+							lineTension: 0,
+							fill: false,
+							spanGaps: true,  // interpolate over null values
+							data: avgSpeeds
+						}
+					] 
+				},
+				options: options  // already defined before ajax request
+			});
+			
+		});
+		
+		</script>
+	</body>
+</html>
