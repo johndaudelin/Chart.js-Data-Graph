@@ -44,7 +44,7 @@ Open Google Chrome and enter this URL: “localhost/src”. The graph should be 
 
 ## Code
 
-I created an API (getData.php) which simply retrieves all rows of data from the "LoadSpeeds" database table and returns it in JSON format using four simple lines of code:
+I created an API (getData.php) which simply retrieves all rows of data from the "LoadSpeeds" database table and returns them in JSON format using four simple lines of code:
 
 ```
 $con = mysqli_connect("localhost", "root", "", "pageloads");
